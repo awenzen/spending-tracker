@@ -30,7 +30,7 @@ export function startWeeklyScheduler() {
       console.error('Weekly report job failed:', err);
     }
   }, {
-    timezone: 'UTC', // we already calculated UTC offset in the cron string
+    timezone: 'UTC', 
   });
 
   console.log(`📅 Weekly report scheduled: "${schedule}" → ${recipients.length} recipient(s)`);
