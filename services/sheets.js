@@ -66,11 +66,23 @@ export async function getLastEntry() {
   };
 }
 
-export async function deleteLastEntry() {
-  const entry = await getLastEntry();
-  if (!entry) return null;
-  await entry.row.delete();
-  return entry;
+export async function deleteLastEntries(count = 1) {
+  if (!sheetsConfigured()) return [];
+  const doc = await getDoc();
+  const sheet = doc.sheetsByIndex[0];
+  await ensureHeaderRow(sheet);
+  const rows = await sheet.getRows();
+  if (rows.length === 0) return [];
+  const toDelete = rows.slice(-count);
+  const deleted = toDelete.map(r => ({
+    amount: parseFloat(r.get('Amount')) || 0,
+    category: r.get('Category'),
+    description: r.get('Description'),
+  }));
+  for (const row of toDelete.reverse()) {
+    await row.delete();
+  }
+  return deleted;
 }
 
 export async function updateLastEntry({ amount, category }) {

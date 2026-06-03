@@ -1,7 +1,7 @@
 import twilio from 'twilio';
 import { parseMessage, formatIDR } from './parser.js';
 import { categorize, CATEGORIES } from './categorizer.js';
-import { logSpending, deleteLastEntry, updateLastEntry, getLastEntry } from './sheets.js';
+import { logSpending, deleteLastEntries, updateLastEntry, getLastEntry } from './sheets.js';
 import { generateWeeklyReport } from './weekly-report.js';
 
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -67,12 +67,13 @@ async function handleCommand(from, { command, args }) {
         `• 150rb bensin\n` +
         `• 2.5jt sewa kos\n\n` +
         `*Commands:*\n` +
-        `/report — this week's report\n` +
         `/undo — delete last entry\n` +
-        `/edit 60k — change last entry's amount\n` +
-        `/fix Food — change last entry's category\n` +
-        `/categories — list categories\n` +
+        `/undo 3 — delete last 3 entries\n` +
+        `/edit 60k — change last amount\n` +
+        `/fix Food — change last category\n` +
         `/last — show last entry\n` +
+        `/report — this week's report\n` +
+        `/categories — list categories\n` +
         `/help — show this message`
       );
       break;
@@ -85,11 +86,15 @@ async function handleCommand(from, { command, args }) {
 
     case 'undo':
     case 'delete': {
-      const deleted = await deleteLastEntry();
-      if (deleted) {
-        await sendMessage(from,
-          `🗑️ Deleted: ${formatIDR(deleted.amount)} — ${deleted.description} (${deleted.category})`
-        );
+      const count = parseInt(args[0]) || 1;
+      if (count > 10) {
+        await sendMessage(from, 'Max 10 at a time.');
+        break;
+      }
+      const deleted = await deleteLastEntries(count);
+      if (deleted.length) {
+        const lines = deleted.map(d => `  • ${formatIDR(d.amount)} — ${d.description} (${d.category})`).join('\n');
+        await sendMessage(from, `🗑️ Deleted ${deleted.length} entry${deleted.length > 1 ? 's' : ''}:\n${lines}`);
       } else {
         await sendMessage(from, 'Nothing to undo.');
       }
@@ -97,7 +102,6 @@ async function handleCommand(from, { command, args }) {
     }
 
     case 'edit': {
-      // /edit 60k — change amount of last entry
       if (!args.length) {
         await sendMessage(from, 'Usage: /edit 60k');
         break;
@@ -119,7 +123,6 @@ async function handleCommand(from, { command, args }) {
     }
 
     case 'fix': {
-      // /fix Food — change category of last entry
       if (!args.length) {
         await sendMessage(from, `Usage: /fix CategoryName\nCategories: ${CATEGORIES.join(', ')}`);
         break;
@@ -166,7 +169,6 @@ async function handleCommand(from, { command, args }) {
   }
 }
 
-// Parse amount from command args like "60k", "150rb"
 function parseAmount(str) {
   const suffixes = { k: 1000, rb: 1000, ribu: 1000, jt: 1000000, juta: 1000000 };
   const match = str.match(/^(\d+(?:[.,]\d+)?)\s*(k|rb|ribu|jt|juta)?$/i);
