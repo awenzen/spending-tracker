@@ -50,6 +50,42 @@ export async function logSpending({ amount, category, description, method, raw }
   });
 }
 
+export async function getLastEntry() {
+  if (!sheetsConfigured()) return null;
+  const doc = await getDoc();
+  const sheet = doc.sheetsByIndex[0];
+  await ensureHeaderRow(sheet);
+  const rows = await sheet.getRows();
+  if (rows.length === 0) return null;
+  const last = rows[rows.length - 1];
+  return {
+    row: last,
+    amount: parseFloat(last.get('Amount')) || 0,
+    category: last.get('Category'),
+    description: last.get('Description'),
+  };
+}
+
+export async function deleteLastEntry() {
+  const entry = await getLastEntry();
+  if (!entry) return null;
+  await entry.row.delete();
+  return entry;
+}
+
+export async function updateLastEntry({ amount, category }) {
+  const entry = await getLastEntry();
+  if (!entry) return null;
+  if (amount !== undefined) entry.row.set('Amount', amount);
+  if (category !== undefined) entry.row.set('Category', category);
+  await entry.row.save();
+  return {
+    amount: parseFloat(entry.row.get('Amount')) || 0,
+    category: entry.row.get('Category'),
+    description: entry.row.get('Description'),
+  };
+}
+
 export async function getSpendingInRange(startDate, endDate) {
   if (!sheetsConfigured()) return [];
   const doc = await getDoc();
