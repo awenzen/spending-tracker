@@ -2,20 +2,28 @@ import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 
 let docCache = null;
-const sheetsConfigured = () =>
-  process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
-  process.env.GOOGLE_PRIVATE_KEY &&
-  process.env.GOOGLE_SHEET_ID;
+let credentials = null;
+
+function getCredentials() {
+  if (credentials) return credentials;
+  try {
+    credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    return credentials;
+  } catch { return null; }
+}
+
+const sheetsConfigured = () => process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.GOOGLE_SHEET_ID;
 
 async function getDoc() {
   if (docCache) return docCache;
   if (!sheetsConfigured()) throw new Error('Google Sheets not configured');
-  const serviceAccountAuth = new JWT({
-    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/^"|"$/g, '').replace(/\\n/g, '\n'),
+  const creds = getCredentials();
+  const auth = new JWT({
+    email: creds.client_email,
+    key: creds.private_key,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
-  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
+  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, auth);
   await doc.loadInfo();
   docCache = doc;
   return doc;
@@ -28,10 +36,7 @@ async function ensureHeaderRow(sheet) {
 }
 
 export async function logSpending({ amount, category, description, method, raw }) {
-  if (!sheetsConfigured()) {
-    console.log(`[NO SHEETS] ${amount} | ${category} | ${description}`);
-    return;
-  }
+  if (!sheetsConfigured()) { console.log('[NO SHEETS]', amount, '|', category, '|', description); return; }
   const doc = await getDoc();
   const sheet = doc.sheetsByIndex[0];
   await ensureHeaderRow(sheet);
