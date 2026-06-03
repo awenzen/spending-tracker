@@ -1,0 +1,23 @@
+{
+  "name": "whatsapp-spending-tracker",
+  "version": "1.0.0",
+  "description": "WhatsApp chatbot that logs spending to Google Sheets with weekly insights",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "twilio": "^5.3.5",
+    "express": "^4.21.1",
+    "google-spreadsheet": "^4.1.4",
+    "google-auth-library": "^9.14.2",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
