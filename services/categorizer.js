@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_MODEL = 'gpt-4o-mini'; 
+const GITHUB_MODEL = 'gpt-4o-mini';   
 
 export const CATEGORIES = ['Food', 'Transport', 'Groceries', 'Entertainment', 'Shopping', 'Bills', 'Health', 'Other'];
 
@@ -33,7 +33,7 @@ const KEYWORDS = {
   ],
   Entertainment: [
     'bioskop', 'cinema', 'xxi', 'cgv', 'movie', 'film',
-    'netflix', 'spotify', 'youtube premium', 'disney', 'hbo', 'iqiyi', 'wetv',
+    'netflix', 'spotify', 'youtube premium', 'disney', 'hbo', '1x','bet',
     'game', 'steam', 'playstation', 'ps store', 'xbox', 'nintendo',
     'konser', 'concert', 'tiket', 'event',
     'tennis', 'gym', 'fitness', 'olahraga', 'futsal', 'badminton', 'golf',
